@@ -17,11 +17,11 @@ const DUTY_IN_CHAR = ['m', 'e', 'n', 'o']
 const COUNTRY_NUM = 200
 const IMPERIALIST_NUM = 25
 const COLONY_NUM = COUNTRY_NUM - IMPERIALIST_NUM
-const YEARS = 500
+const YEARS = 150
 #const Beta = 2.0
 #const Gamma = pi * 0.25
 const Xi = 0.1  #ξ
-const ASSIMILATION_TIMES = 10
+const ASSIMILATION_TIMES = 50
 
 
 # generates correct duty per day matrix for evaluation
@@ -109,48 +109,13 @@ end
 
 function assimilation(colony)
     R = copy(colony)
-    NM  = abs.(calcnursematrix(R) - EVAL_NURSE)
-    DM = abs.(calcdaymatrix(R) - EVAL_DAY)
-
-    NMVector = zeros(Int16, NURSES)
-    for i=1:NURSES
-        NMVector[i] = sum(NM[i,:])
-    end
-    #println(NMVector)
-    DMVector = zeros(Int16, DAYS)
-    for i=1:DAYS
-        DMVector[i] = sum(DM[:,i])
-    end
-    #println(DMVector)
-
     ex_end = round.(NURSES*DAYS/2)
     exchange_num = rand(1:ex_end)
     #exchange_num = 1
     #exchange_pair_indics = zeros(Int64, exchange_num*2)
-    for i=1:1
-        c = rand(1:NURSES)
-        if NMVector[c] != 0
-            for j=1:NURSES
-                if NMVector[j] != 0
-                    c = j
-                end
-            end
-        end
-
-        r = rand(1:DAYS)
-        src_index = (c-1) * DAYS + r
-
-        c = rand(1:NURSES)
-
-        r = rand(1:DAYS)
-        if DMVector[r] != 0
-            for j=1:DAYS
-                if DMVector[j] != 0
-                    r = j
-                end
-            end
-        end
-        dest_index = (c-1) * DAYS + r
+    for i=1:exchange_num
+        src_index = rand(1:NURSES*DAYS)
+        dest_index = rand(1:NURSES*DAYS)
 
         R[src_index] = colony[dest_index]
         R[dest_index] = colony[src_index]
@@ -230,15 +195,9 @@ end
 # move colony towards imperialist
 function revolution(colonies, countries, fitnesses)
     n_colony = length(colonies)
-    rev_num = rand(1:n_colony)
-
-    for i in 1:rev_num
+    for c in 1:n_colony
         # revolution
-        c = rand(1:n_colony)
         c_index = colonies[c]
-        #new_solution = assimilation(countries[c_index])
-        #new_fitness = calcfitness(new_solution)
-
         for j = 1:ASSIMILATION_TIMES # 随机的交换位置，直到fitness 比之前好
             new_solution = assimilation(countries[c_index])
             new_fitness = calcfitness(new_solution)
@@ -248,7 +207,6 @@ function revolution(colonies, countries, fitnesses)
                 break
             end
         end
-
     end
 end
 
@@ -289,10 +247,6 @@ function main()
     for i=1:COUNTRY_NUM
         countries[i] = gensoluation()
         fitnesses[i] = calcfitness(countries[i])
-        if fitnesses[i] == 0
-            displaysolution(countries[empires[strongest_empire_id].imp_index])
-            return
-        end
     end
 
     # inital Imperialists
@@ -313,7 +267,6 @@ function main()
                 #intraempirewar
                 imp_index = empires[i].imp_index
                 best_colony_fitness = minimum(fitnesses[colonies[:]])
-                #println(fitnesses)
                 if  best_colony_fitness < fitnesses[imp_index]
                     best_index = indmin(fitnesses[colonies[:]])
                     imperialists[i] = empires[i].imp_index = colonies[best_index]

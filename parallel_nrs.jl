@@ -21,7 +21,7 @@ const YEARS = 500
 #const Beta = 2.0
 #const Gamma = pi * 0.25
 const Xi = 0.1  #ξ
-const ASSIMILATION_TIMES = 10
+const ASSIMILATION_TIMES = 20
 
 
 # generates correct duty per day matrix for evaluation
@@ -232,7 +232,7 @@ function revolution(colonies, countries, fitnesses)
     n_colony = length(colonies)
     rev_num = rand(1:n_colony)
 
-    for i in 1:rev_num
+    Threads.@threads for i in 1:rev_num
         # revolution
         c = rand(1:n_colony)
         c_index = colonies[c]
@@ -262,7 +262,8 @@ end
 
 function eliminating(empires, imperialists, empire_fitnesses, empire_powers)
     eliminating_empires = Array{Int64}(0)
-    for i=1:length(empires)
+    n_emp = length(empires)
+    for i=1:n_emp
         n_colony = length(empires[i].colonies_index)
         if n_colony == 0
             push!(empires[indmax(empire_powers)].colonies_index, empires[i].imp_index)
@@ -286,11 +287,11 @@ function main()
     #generates inital solutions
     countries = Array{Any}(COUNTRY_NUM)
     fitnesses = zeros(Int64, COUNTRY_NUM)
-    for i=1:COUNTRY_NUM
+    Threads.@threads for i=1:COUNTRY_NUM
         countries[i] = gensoluation()
         fitnesses[i] = calcfitness(countries[i])
         if fitnesses[i] == 0
-            displaysolution(countries[empires[strongest_empire_id].imp_index])
+            displaysolution(countries[i])
             return
         end
     end
@@ -347,8 +348,8 @@ function main()
             displaysolution(countries[empires[strongest_empire_id].imp_index])
             break;
         end
+    end # end for years
 
-    end # end for yeas
 end
 
 
